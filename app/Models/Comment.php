@@ -12,6 +12,7 @@ class Comment extends Model
     protected $fillable = [
         'body',
         'post_id',
+        'user_id',
     ];
 
     public function post()
@@ -19,9 +20,8 @@ class Comment extends Model
         return $this->belongsTo(Post::class);
     }
 
-    // Si un comentario pertenece a un usuario:
-    // public function user()
-    // {
-    //     return $this->belongsTo(User::class);
-    // }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

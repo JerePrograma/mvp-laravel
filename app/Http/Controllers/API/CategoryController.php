@@ -7,43 +7,59 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 
 class CategoryController extends Controller
 {
-    public function __construct()
+    /**
+     * Listar todas las categorías
+     */
+    public function index(): AnonymousResourceCollection
     {
-        // Sólo autenticados pueden crear, editar o borrar
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
-        $this->middleware('can:manage-categories')->only(['store', 'update', 'destroy']);
+        return CategoryResource::collection(
+            Category::all()
+        );
     }
 
-    public function index()
-    {
-        return CategoryResource::collection(Category::all());
-    }
-
-    public function show(Category $category)
+    /**
+     * Mostrar una sola categoría
+     */
+    public function show(Category $category): CategoryResource
     {
         return new CategoryResource($category);
     }
 
-    public function store(StoreCategoryRequest $request)
+    /**
+     * Crear una nueva categoría
+     */
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
         $category = Category::create($request->validated());
+
         return (new CategoryResource($category))
             ->response()
-            ->setStatusCode(201);
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category)
+    /**
+     * Actualizar una categoría existente
+     */
+    public function update(UpdateCategoryRequest $request, Category $category): CategoryResource
     {
         $category->update($request->validated());
+
         return new CategoryResource($category);
     }
 
-    public function destroy(Category $category)
+    /**
+     * Eliminar una categoría
+     */
+    public function destroy(Category $category): Response
     {
         $category->delete();
+
         return response()->noContent();
     }
 }

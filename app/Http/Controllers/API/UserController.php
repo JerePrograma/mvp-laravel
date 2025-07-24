@@ -3,146 +3,88 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-/**
- * UserController
- *
- * @OA\Tag(
- *     name="Users",
- *     description="Endpoints para gestionar usuarios"
- * )
- */
 class UserController extends Controller
 {
     /**
-     * Listar todos los usuarios
-     *
-     * @OA\Get(
-     *     path="/api/users",
-     *     tags={"Users"},
-     *     @OA\Response(response=200, description="Listado de usuarios")
-     * )
+     * Listar usuarios paginados
      */
-    public function index(): Response
+    public function index(): AnonymousResourceCollection
     {
-        $users = User::all();
-        return response($users, 200);
+        return UserResource::collection(User::paginate(15));
     }
 
     /**
-     * Mostrar un usuario
-     *
-     * @OA\Get(
-     *     path="/api/users/{id}",
-     *     tags={"Users"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Datos del usuario"),
-     *     @OA\Response(response=404, description="Usuario no encontrado")
-     * )
+     * Mostrar perfil del usuario autenticado
      */
-    public function show(int $id): Response
+    public function me(): UserResource
     {
-        $user = User::findOrFail($id);
-        return response($user, 200);
+        return new UserResource(auth()->user());
+    }
+
+    /**
+     * Mostrar un usuario específico
+     */
+    public function show(User $user): UserResource
+    {
+        return new UserResource($user);
     }
 
     /**
      * Crear un nuevo usuario
-     *
-     * @OA\Post(
-     *     path="/api/users",
-     *     tags={"Users"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name","email","password"},
-     *             @OA\Property(property="name", type="string"),
-     *             @OA\Property(property="email", type="string", format="email"),
-     *             @OA\Property(property="password", type="string", format="password"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password")
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Usuario creado")
-     * )
      */
-    public function store(Request $request): Response
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        $data = $request->validated();
 
-        $data['password'] = Hash::make($data['password']);
+        // Forzamos is_admin=false si quien crea no es admin
+        if (!auth()->user()->is_admin) {
+            unset($data['is_admin']);
+        }
+
         $user = User::create($data);
-        return response($user, 201);
+
+        return (new UserResource($user))
+            ->response()
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**
      * Actualizar un usuario existente
-     *
-     * @OA\Put(
-     *     path="/api/users/{id}",
-     *     tags={"Users"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string"),
-     *             @OA\Property(property="email", type="string", format="email")
-     *         )
-     *     ),
-     *     @OA\Response(response=200, description="Usuario actualizado"),
-     *     @OA\Response(response=404, description="Usuario no encontrado")
-     * )
      */
-    public function update(Request $request, int $id): Response
+    public function update(UpdateUserRequest $request, User $user): UserResource
     {
-        $user = User::findOrFail($id);
+        $this->authorize('update', $user);
+        $user->update($request->validated());
 
-        $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|unique:users,email,' . $user->id,
-        ]);
-
-        $user->update($data);
-        return response($user, 200);
+        return new UserResource($user);
     }
 
     /**
      * Eliminar un usuario
-     *
-     * @OA\Delete(
-     *     path="/api/users/{id}",
-     *     tags={"Users"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=204, description="Usuario eliminado"),
-     *     @OA\Response(response=404, description="Usuario no encontrado")
-     * )
      */
-    public function destroy(int $id): Response
+    public function destroy(User $user): Response
     {
-        $user = User::findOrFail($id);
+        $this->authorize('delete', $user);
         $user->delete();
-        return response(null, 204);
+
+        return response()->noContent();
     }
+
+    public function toggleAdmin(User $user): UserResource
+    {
+        // Solo admins llegan aquí (can:manage-users)
+        $user->is_admin = !$user->is_admin;
+        $user->save();
+
+        return new UserResource($user);
+    }
+
 }

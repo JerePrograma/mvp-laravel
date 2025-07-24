@@ -8,45 +8,71 @@ use App\Http\Requests\UpdateCommentRequest;
 use App\Http\Resources\CommentResource;
 use App\Models\Post;
 use App\Models\Comment;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CommentController extends Controller
 {
-    public function __construct()
+    /**
+     * Listar comentarios de un post
+     */
+    public function index(Post $post): AnonymousResourceCollection
     {
-        $this->middleware('auth:sanctum')->only(['store', 'update', 'destroy']);
+        return CommentResource::collection(
+            $post->comments()->with('user')->get()
+        );
     }
 
-    public function index(Post $post)
+    /**
+     * Mostrar un comentario específico
+     */
+    public function show(Comment $comment): CommentResource
     {
-        return CommentResource::collection($post->comments()->with('user')->get());
+        return new CommentResource(
+            $comment->load('user')
+        );
     }
 
-    public function show(Comment $comment)
-    {
-        return new CommentResource($comment->load('user'));
-    }
-
+    /**
+     * Crear un comentario en un post
+     */
+    // CommentController.php
     public function store(StoreCommentRequest $request, Post $post)
     {
-        $comment = $post->comments()->create(
-            array_merge($request->validated(), ['user_id' => auth()->id()])
-        );
+        $data = $request->validated();
+
+        // creamos el comentario "ad-hoc" desde el usuario autenticado
+        $comment = $request->user()
+            ->comments()
+            ->create(array_merge($data, [
+                'post_id' => $post->id
+            ]));
+
         return (new CommentResource($comment))
             ->response()
-            ->setStatusCode(201);
+            ->setStatusCode(JsonResponse::HTTP_CREATED);
     }
 
-    public function update(UpdateCommentRequest $request, Comment $comment)
+    /**
+     * Actualizar un comentario
+     */
+    public function update(UpdateCommentRequest $request, Comment $comment): CommentResource
     {
         $this->authorize('update', $comment);
         $comment->update($request->validated());
+
         return new CommentResource($comment);
     }
 
-    public function destroy(Comment $comment)
+    /**
+     * Eliminar un comentario
+     */
+    public function destroy(Comment $comment): Response
     {
         $this->authorize('delete', $comment);
         $comment->delete();
+
         return response()->noContent();
     }
 }

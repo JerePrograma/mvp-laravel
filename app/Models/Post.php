@@ -25,9 +25,11 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
-    // Si asignas posts a usuarios:
-    // public function user()
-    // {
-    //     return $this->belongsTo(User::class);
-    // }
+    /**
+     * Relación: este post pertenece a un usuario
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

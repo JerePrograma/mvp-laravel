@@ -7,45 +7,65 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PostController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
-    }
-
-    public function index()
+    /**
+     * Listar posts paginados
+     */
+    public function index(): AnonymousResourceCollection
     {
         return PostResource::collection(
-            Post::with('category', 'user')->paginate(10)
+            Post::with(['category', 'user'])->paginate(10)
         );
     }
 
-    public function show(Post $post)
+    /**
+     * Mostrar un post específico
+     */
+    public function show(Post $post): PostResource
     {
-        return new PostResource($post->load('comments.user'));
+        return new PostResource(
+            $post->load(['comments.user', 'category', 'user'])
+        );
     }
 
-    public function store(StorePostRequest $request)
+    /**
+     * Crear un nuevo post
+     */
+    public function store(StorePostRequest $request): JsonResponse
     {
-        $post = auth()->user()->posts()->create($request->validated());
+        $post = auth()->user()->posts()->create(
+            $request->validated()
+        );
+
         return (new PostResource($post))
             ->response()
-            ->setStatusCode(201);
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
-    public function update(UpdatePostRequest $request, Post $post)
+    /**
+     * Actualizar un post existente
+     */
+    public function update(UpdatePostRequest $request, Post $post): PostResource
     {
         $this->authorize('update', $post);
         $post->update($request->validated());
+
         return new PostResource($post);
     }
 
-    public function destroy(Post $post)
+    /**
+     * Eliminar un post
+     */
+    public function destroy(Post $post): Response
     {
         $this->authorize('delete', $post);
         $post->delete();
+
         return response()->noContent();
     }
 }

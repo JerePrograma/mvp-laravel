@@ -2,28 +2,41 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Arr;                                     // ← Faltaba esto
-use Symfony\Component\HttpFoundation\Response as HttpResponse;   // ← Faltaba esto
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+use Illuminate\Support\Arr;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
+    /**
+     * Excepciones que no queremos reportar.
+     *
+     * @var array<int, class-string<Throwable>>
+     */
     protected $dontReport = [
         AuthenticationException::class,
+        AuthorizationException::class,
         ValidationException::class,
         ModelNotFoundException::class,
         NotFoundHttpException::class,
         ThrottleRequestsException::class,
     ];
 
+    /**
+     * Inputs que no deben volver en 'old' tras validación fallida.
+     *
+     * @var array<int, string>
+     */
     protected $dontFlash = [
         'current_password',
         'password',
@@ -32,78 +45,101 @@ class Handler extends ExceptionHandler
 
     public function register(): void
     {
-        //
-    }
-
-    public function render($request, Throwable $exception)
-    {
-        // Cambié wantsJson() por expectsJson()
-        if ($request->expectsJson() || $request->is('api/*')) {
-            $status = 500;
-            $payload = ['message' => 'Error interno del servidor.'];
-
-            if (
-                $exception instanceof ModelNotFoundException ||
-                $exception instanceof NotFoundHttpException
-            ) {
-                $status = 404;
-                $payload['message'] = 'Recurso no encontrado.';
-            }
-
-            if ($exception instanceof ValidationException) {
-                $status = 422;
-                $payload = [
+        // 422: Validación
+        $this->renderable(function (ValidationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
                     'message' => 'Error de validación.',
-                    'errors' => $exception->errors(),
-                ];
+                    'errors' => $e->errors(),
+                ], HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
             }
+        });
 
-            if (
-                $exception instanceof AuthenticationException ||
-                $exception instanceof UnauthorizedHttpException
-            ) {
-                $status = 401;
-                $payload['message'] = 'No autenticado.';
+        // 401: No autenticado
+        $this->renderable(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'No autenticado.',
+                ], HttpResponse::HTTP_UNAUTHORIZED);
             }
+        });
 
-            if ($exception instanceof ThrottleRequestsException) {
-                $status = 429;
-                $payload['message'] = 'Muchas solicitudes. Intenta más tarde.';
+        // 403: Falló Policy / Gate
+        $this->renderable(function (AuthorizationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Acción no autorizada.',
+                ], HttpResponse::HTTP_FORBIDDEN);
             }
+        });
 
-            if ($exception instanceof HttpException) {
-                $status = $exception->getStatusCode();
-                // Ahora HttpResponse hace referencia a Symfony\Component\HttpFoundation\Response
-                $payload['message'] = $exception->getMessage()
-                    ?: (HttpResponse::$statusTexts[$status] ?? 'Error HTTP');
+        // 403: AccessDeniedHttpException (Symfony)
+        $this->renderable(function (AccessDeniedHttpException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Acceso denegado.',
+                ], HttpResponse::HTTP_FORBIDDEN);
             }
+        });
 
-            if (config('app.debug')) {
-                $payload['exception'] = get_class($exception);
-                $payload['trace'] = collect($exception->getTrace())
-                    ->map(fn($frame) => Arr::only($frame, ['file', 'line', 'function']))
-                    ->all();
+        // 404: Modelo o ruta no encontrada
+        $this->renderable(function (ModelNotFoundException|NotFoundHttpException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Recurso no encontrado.',
+                ], HttpResponse::HTTP_NOT_FOUND);
             }
+        });
 
-            return response()->json($payload, $status);
-        }
+        // 429: Límite de peticiones
+        $this->renderable(function (ThrottleRequestsException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Muchas solicitudes. Intenta más tarde.',
+                ], HttpResponse::HTTP_TOO_MANY_REQUESTS);
+            }
+        });
 
-        return parent::render($request, $exception);
+        // 4xx / 5xx genérico
+        $this->renderable(function (HttpException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                $status = $e->getStatusCode();
+                $message = $e->getMessage() ?: (HttpResponse::$statusTexts[$status] ?? 'Error HTTP');
+
+                return response()->json([
+                    'message' => $message,
+                ], $status);
+            }
+        });
+
+        // 500: Fallback error interno
+        $this->renderable(function (Throwable $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                $payload = ['message' => 'Error interno del servidor.'];
+
+                if (config('app.debug')) {
+                    $payload['exception'] = get_class($e);
+                    $payload['trace'] = collect($e->getTrace())
+                        ->map(fn($frame) => Arr::only($frame, ['file', 'line', 'function']))
+                        ->all();
+                }
+
+                return response()->json($payload, HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        });
     }
-
 
     /**
-     * Convierte una AuthenticationException en JSON en peticiones API.
+     * Convierte una AuthenticationException en JSON para peticiones API.
      */
     protected function unauthenticated($request, AuthenticationException $exception)
     {
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
                 'message' => 'No autenticado.',
-            ], 401);
+            ], HttpResponse::HTTP_UNAUTHORIZED);
         }
 
-        // Si fuera web (no API), redirigir al login tradicional
-        return redirect()->guest(route('login'));
+        return parent::unauthenticated($request, $exception);
     }
 }
