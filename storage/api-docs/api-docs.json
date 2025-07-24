@@ -1,0 +1,747 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "MVP Laravel API",
+        "description": "Documentación Swagger de la API CRUD de MVP Laravel",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "Servidor local"
+        }
+    ],
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Registrar un nuevo usuario y retornar token",
+                "operationId": "a718f172ff3ac464d723835815f8fb57",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuario registrado y token generado"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login de usuario y retorno de token",
+                "operationId": "44212a9096e4b09358281e9ec8a0701d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Inicio de sesión exitoso con token"
+                    },
+                    "422": {
+                        "description": "Credenciales incorrectas"
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout y revocación de tokens",
+                "operationId": "79854151e609bd20032aa5aa4d5a35c0",
+                "responses": {
+                    "204": {
+                        "description": "Logout exitoso"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Listar todas las categorías",
+                "operationId": "8e17a9627dbed245cf032f867569cf11",
+                "responses": {
+                    "200": {
+                        "description": "Listado de categorías"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Crear una nueva categoría",
+                "operationId": "2140f330d926c3e118cab9391dc4ff42",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Categoría creada"
+                    }
+                }
+            }
+        },
+        "/api/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Mostrar una categoría",
+                "operationId": "6a038665b20191638e1608ea8897bf64",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos de la categoría"
+                    },
+                    "404": {
+                        "description": "Categoría no encontrada"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Actualizar una categoría existente",
+                "operationId": "e4e7aaba2eee4d7e813dea85bf3cf3ed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categoría actualizada"
+                    },
+                    "404": {
+                        "description": "Categoría no encontrada"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Eliminar una categoría",
+                "operationId": "f365d407ea3098d6b545847b09322b13",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Categoría eliminada"
+                    },
+                    "404": {
+                        "description": "Categoría no encontrada"
+                    }
+                }
+            }
+        },
+        "/api/posts/{post}/comments": {
+            "get": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Listar comentarios de un post",
+                "operationId": "905d031744c7e5f30cf72c875c9d3898",
+                "parameters": [
+                    {
+                        "name": "post",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado de comentarios"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Crear un comentario en un post",
+                "operationId": "b546a3018187ad31634acd67ce21b1d5",
+                "parameters": [
+                    {
+                        "name": "post",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "body"
+                                ],
+                                "properties": {
+                                    "body": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Comentario creado"
+                    }
+                }
+            }
+        },
+        "/api/comments/{id}": {
+            "get": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Mostrar un comentario",
+                "operationId": "4ae27c344a43fd0fa0c7d1d58017ec07",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos del comentario"
+                    },
+                    "404": {
+                        "description": "Comentario no encontrado"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Actualizar un comentario",
+                "operationId": "6c84b6f2b00ca72a544d423647bb4042",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "body"
+                                ],
+                                "properties": {
+                                    "body": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Comentario actualizado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Eliminar un comentario",
+                "operationId": "746d9385c0a8b30190b506df03b3fafc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Comentario eliminado"
+                    }
+                }
+            }
+        },
+        "/api/posts": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Listar todos los posts",
+                "operationId": "4186b281454d4cf4c67a3254c731218a",
+                "responses": {
+                    "200": {
+                        "description": "Listado de posts"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Crear un nuevo post",
+                "operationId": "c525736cca34af3402c290c5a680dbde",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "content"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "content": {
+                                        "type": "string"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Post creado"
+                    }
+                }
+            }
+        },
+        "/api/posts/{id}": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Mostrar un post",
+                "operationId": "e0f9a2214074a618841855b152721330",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos del post"
+                    },
+                    "404": {
+                        "description": "Post no encontrado"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Actualizar un post existente",
+                "operationId": "0dec9d9e95078da66ec7717d5b63e8f4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "content": {
+                                        "type": "string"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Post actualizado"
+                    },
+                    "404": {
+                        "description": "Post no encontrado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Eliminar un post",
+                "operationId": "11cb021c9991dd024d16206da5df0ecd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Post eliminado"
+                    }
+                }
+            }
+        },
+        "/api/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Listar todos los usuarios",
+                "operationId": "d7a57f4d7de18fb0f92501172472c9b6",
+                "responses": {
+                    "200": {
+                        "description": "Listado de usuarios"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Crear un nuevo usuario",
+                "operationId": "9fea6f2adcb69614c521a7733358382d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuario creado"
+                    }
+                }
+            }
+        },
+        "/api/users/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Mostrar un usuario",
+                "operationId": "40a5104e23b52137e78c3d3ac48b88a8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos del usuario"
+                    },
+                    "404": {
+                        "description": "Usuario no encontrado"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Actualizar un usuario existente",
+                "operationId": "b166772cec9714067040e77cf14beeba",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Usuario actualizado"
+                    },
+                    "404": {
+                        "description": "Usuario no encontrado"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Eliminar un usuario",
+                "operationId": "ce06860a51ab016ef66e753544fe4563",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Usuario eliminado"
+                    },
+                    "404": {
+                        "description": "Usuario no encontrado"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Endpoints para registro, login y logout"
+        },
+        {
+            "name": "Categories",
+            "description": "Endpoints para gestionar categorías"
+        },
+        {
+            "name": "Comments",
+            "description": "Endpoints para gestionar comentarios"
+        },
+        {
+            "name": "Posts",
+            "description": "Endpoints para gestionar posts"
+        },
+        {
+            "name": "Users",
+            "description": "Endpoints para gestionar usuarios"
+        }
+    ]
+}
